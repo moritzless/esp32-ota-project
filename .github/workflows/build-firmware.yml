@@ -1,51 +1,55 @@
-name: Build and Release Firmware
+name: Build and Upload Firmware
 
 on:
-  release:
-    types: [published]
-  push:
-    branches: [ main ]
-  workflow_dispatch: 
-  
+    release:
+        types:
+            - created
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-          
-    - name: Cache PlatformIO packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.platformio
-        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-        
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Install PlatformIO Core
-      run: pip install --upgrade platformio
-      
-    - name: Build firmware
-      run: pio run --environment esp32dev
-      
-    - name: Upload firmware to release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: .pio/build/esp32dev/firmware.bin
-        asset_name: firmware.bin
-        asset_content_type: application/octet-stream
+    pio-build:
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ github.token }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PlatformIO
+              run: |
+                  sudo apt-get install -y python3-pip
+                  pip3 install platformio
+              shell: bash
+
+            - name: Build Firmware
+              run: |
+                echo 'PLATFORMIO_BUILD_FLAGS=-DOTA_VERSION="${{ github.event.release.name }}" -DOTA_BUILT_ON_GITHUB' >> $GITHUB_ENV
+                echo "$PLATFORMIO_BUILD_FLAGS"
+                pio run -e esp32
+
+            - name: Upload Firmware
+              uses: actions/upload-artifact@v4
+              with:
+                  name: firmware
+                  path: .pio/build/esp32/firmware.bin
+
+    update-firmware-asset:
+        needs: pio-build
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ github.token }}
+
+        steps:
+            - name: Download Firmware
+              uses: actions/download-artifact@v4
+              with:
+                  name: firmware
+                  path: firmware
+
+            - name: Show Contents of Firmware Directory
+              run: ls ./firmware/
+
+            - name: Upload Firmware to Release Assets
+              run: |
+                  gh release list --repo ${{ github.repository }}
+                  echo "Tag name = ${{ github.event.release.tag_name }}"
+                  gh release upload "${{ github.event.release.tag_name }}" ./firmware/firmware.bin --clobber --repo ${{ github.repository }}
