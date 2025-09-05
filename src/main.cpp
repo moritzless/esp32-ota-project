@@ -20,7 +20,7 @@ const char* ssid = "Moritz WLAN";
 const char* password = "Schnorrer123";     
 
 // Firmware version
-const char* FIRMWARE_VERSION = "v1.0.9";
+const char* FIRMWARE_VERSION = "v1.0.10";
 
 // Update check interval (5 minutes)
 const unsigned long updateCheckInterval = 5 * 60 * 1000;
