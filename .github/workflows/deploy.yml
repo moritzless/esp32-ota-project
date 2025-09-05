@@ -25,13 +25,13 @@ jobs:
               run: |
                 echo 'PLATFORMIO_BUILD_FLAGS=-DOTA_VERSION="${{ github.event.release.name }}" -DOTA_BUILT_ON_GITHUB' >> $GITHUB_ENV
                 echo "$PLATFORMIO_BUILD_FLAGS"
-                pio run -e esp32
+                pio run -e esp32s3
 
             - name: Upload Firmware
               uses: actions/upload-artifact@v4
               with:
                   name: firmware
-                  path: .pio/build/esp32/firmware.bin
+                  path: .pio/build/esp32s3/firmware.bin
 
     update-firmware-asset:
         needs: pio-build
