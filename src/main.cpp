@@ -118,31 +118,31 @@ void checkForUpdates() {
   Serial.println("Checking for firmware updates...");
   Serial.println("Repository: " + String(OTAGH_OWNER_NAME) + "/" + String(OTAGH_REPO_NAME));
   
-  // Check if an update is available using correct API
+  // Check if an update is available
   OTA::UpdateObject updateInfo = OTA::isUpdateAvailable();
   
   if (updateInfo.condition != OTA::NO_UPDATE) {
     Serial.println("New firmware available! Starting update process...");
     Serial.println("Asset ID: " + String(updateInfo.firmware_asset_id));
     
-    // Perform the update with the update object
-    updateInfo = OTA::performUpdate(&updateInfo);
+    // Perform the update - this returns InstallCondition, not UpdateObject
+    OTA::InstallCondition result = OTA::performUpdate(&updateInfo);
     
-    if (updateInfo.condition == OTA::UPDATE_OK) {
+    if (result == OTA::INSTALL_SUCCESSFUL) {
       Serial.println("Update successful! Device will restart automatically.");
       // Device will restart automatically
     } else {
-      Serial.println("Update failed with condition: " + String(updateInfo.condition));
+      Serial.println("Update failed with condition: " + String(result));
       
       // Try redirect method
       Serial.println("Trying redirect method...");
-      updateInfo = OTA::continueRedirect(&updateInfo);
+      OTA::InstallCondition redirectResult = OTA::continueRedirect(&updateInfo);
       
-      if (updateInfo.condition == OTA::UPDATE_OK) {
+      if (redirectResult == OTA::INSTALL_SUCCESSFUL) {
         Serial.println("Redirect update successful! Device will restart automatically.");
       } else {
         Serial.println("Both update methods failed!");
-        Serial.println("Final condition: " + String(updateInfo.condition));
+        Serial.println("Final condition: " + String(redirectResult));
       }
     }
   } else {
