@@ -2,10 +2,17 @@
 #include <WiFiClientSecure.h>
 
 // ================================
-// TODO: CHANGE THESE TO YOUR REPO!
+// OTA Hub Configuration - REQUIRED DEFINES
 // ================================
-#define OTAGH_OWNER_NAME "moritzless"           // ← Change to your GitHub username
-#define OTAGH_REPO_NAME "esp32-ota-project"    // ← Change to your repository name
+#define OTAGH_OWNER_NAME "moritzless"           // Your GitHub username
+#define OTAGH_REPO_NAME "esp32-ota-project"    // Your repository name
+
+// Required OTA defines for the library
+#define OTA_SERVER "api.github.com"
+#define OTA_PORT 443
+#define OTA_CHECK_PATH "/repos/" OTAGH_OWNER_NAME "/" OTAGH_REPO_NAME "/releases/latest"
+#define FIRMWARE_BIN_MATCH "firmware.bin"
+#define OTA_ASSET_ENDPOINT_CONSTRUCTOR(asset_id) "/repos/" OTAGH_OWNER_NAME "/" OTAGH_REPO_NAME "/releases/assets/" + String(asset_id)
 
 // For private repositories, uncomment and add your token:
 // #define OTAGH_BEARER "your_private_repo_token"
@@ -13,10 +20,10 @@
 #include <OTA-Hub.hpp>
 
 // ================================
-// TODO: CHANGE YOUR WIFI CREDENTIALS!
+// WiFi Configuration
 // ================================
-const char* ssid = "Moritz WLAN";           // ← Your WiFi name
-const char* password = "Schnorrer123";     // ← Your WiFi password
+const char* ssid = "Moritz WLAN";           
+const char* password = "Schnorrer123";     
 
 // Firmware version for identification
 const char* FIRMWARE_VERSION = "v1.0.0";
@@ -25,11 +32,21 @@ const char* FIRMWARE_VERSION = "v1.0.0";
 const unsigned long updateCheckInterval = 5 * 60 * 1000;
 unsigned long lastUpdateCheck = 0;
 
+// LED pin for ESP32 (GPIO 2)
+#define LED_BUILTIN 2
+
 WiFiClientSecure wifi_client;
+
+// Function declarations
+void connectToWiFi();
+void checkForUpdates();
 
 void setup() {
   Serial.begin(115200);
-  delay(2000);  // Give time for serial monitor to connect
+  delay(2000);
+  
+  // Initialize LED
+  pinMode(LED_BUILTIN, OUTPUT);
   
   Serial.println("\n" + String("=").substring(0, 50));
   Serial.println("ESP32 OTA-Hub DIY System Starting...");
@@ -40,9 +57,9 @@ void setup() {
   // Connect to WiFi
   connectToWiFi();
   
-  // Set up secure WiFi client
-  // For production, use proper certificates instead of setInsecure()
-  wifi_client.setInsecure(); 
+  // Initialize OTA with secure client
+  wifi_client.setInsecure(); // For testing - use proper certs in production
+  OTA::init(wifi_client);
   
   Serial.println("System ready! Checking for updates...");
   
@@ -101,32 +118,31 @@ void checkForUpdates() {
   Serial.println("🔍 Checking for firmware updates...");
   Serial.println("Repository: " + String(OTAGH_OWNER_NAME) + "/" + String(OTAGH_REPO_NAME));
   
-  // Step 1: Check if an update is available
-  bool updateAvailable = false;
+  // Check if an update is available (new API)
+  OTA::UpdateObject updateInfo = OTA::isUpdateAvailable();
   
-  Serial.println("Contacting GitHub API...");
-  updateAvailable = OTA::isUpdateAvailable(wifi_client);
-  
-  if (updateAvailable) {
+  if (updateInfo.update_available) {
     Serial.println("🎉 New firmware available! Starting update process...");
+    Serial.println("Asset ID: " + String(updateInfo.firmware_asset_id));
     
-    // Step 2: Try to perform the update
-    Serial.println("📥 Downloading and installing update...");
-    if (OTA::performUpdate(wifi_client)) {
-      Serial.println("✅ Update successful! Restarting device...");
-      delay(3000);
-      ESP.restart();
+    // Perform the update with the update object
+    OTA::InstallCondition result = OTA::performUpdate(&updateInfo);
+    
+    if (result == OTA::INSTALL_OK) {
+      Serial.println("✅ Update successful! Device will restart automatically.");
+      // Device will restart automatically
     } else {
-      Serial.println("⚠️ Primary update method failed, trying redirect...");
+      Serial.println("⚠️ Update failed with error code: " + String(result));
       
-      // Step 3: Try following redirect if the first method failed
-      if (OTA::followRedirect(wifi_client)) {
-        Serial.println("✅ Redirect update successful! Restarting device...");
-        delay(3000);
-        ESP.restart();
+      // Try redirect method
+      Serial.println("Trying redirect method...");
+      OTA::InstallCondition redirectResult = OTA::continueRedirect(&updateInfo);
+      
+      if (redirectResult == OTA::INSTALL_OK) {
+        Serial.println("✅ Redirect update successful! Device will restart automatically.");
       } else {
         Serial.println("❌ Both update methods failed!");
-        Serial.println("Check your internet connection and GitHub repository.");
+        Serial.println("Error code: " + String(redirectResult));
       }
     }
   } else {
