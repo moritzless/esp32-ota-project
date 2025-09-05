@@ -10,7 +10,7 @@
 // For private repositories, uncomment and add your token:
 // #define OTAGH_BEARER "your_private_repo_token"
 
-#include <OTA-Hub-diy.hpp>
+#include <OTA-Hub.hpp>
 
 // ================================
 // TODO: CHANGE YOUR WIFI CREDENTIALS!
