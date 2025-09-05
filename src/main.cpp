@@ -19,7 +19,7 @@ const char* ssid = "Moritz WLAN";
 const char* password = "Schnorrer123";     
 
 // Firmware version
-const char* FIRMWARE_VERSION = "v1.0.6";
+const char* FIRMWARE_VERSION = "v1.0.7";
 
 // Update check interval (5 minutes)
 const unsigned long updateCheckInterval = 5 * 60 * 1000;
@@ -84,7 +84,7 @@ void loop() {
   
   // Main application - print status every 10 seconds
   static unsigned long lastStatusPrint = 0;
-  if (millis() - lastStatusPrint >= 50000) {
+  if (millis() - lastStatusPrint >= 10000) {
     Serial.println("Main app running... " + String(FIRMWARE_VERSION) + 
                    " | Free heap: " + String(ESP.getFreeHeap()) + 
                    " | LED pin " + String(LED_PIN) + " active");
@@ -96,7 +96,7 @@ void loop() {
 
 void blinkLED() {
   // Blink external LED on pin 20 every 1 second
-  if (millis() - lastLedBlink >= 1000) {
+  if (millis() - lastLedBlink >= 3000) {
     ledState = !ledState;
     digitalWrite(LED_PIN, ledState);
     digitalWrite(BUILTIN_LED, ledState); // Also blink built-in LED
