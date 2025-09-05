@@ -111,41 +111,41 @@ void connectToWiFi() {
 
 void checkForUpdates() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("✗ No WiFi connection - skipping update check");
+    Serial.println("No WiFi connection - skipping update check");
     return;
   }
   
-  Serial.println("🔍 Checking for firmware updates...");
+  Serial.println("Checking for firmware updates...");
   Serial.println("Repository: " + String(OTAGH_OWNER_NAME) + "/" + String(OTAGH_REPO_NAME));
   
-  // Check if an update is available (new API)
+  // Check if an update is available using correct API
   OTA::UpdateObject updateInfo = OTA::isUpdateAvailable();
   
-  if (updateInfo.update_available) {
-    Serial.println("🎉 New firmware available! Starting update process...");
+  if (updateInfo.condition != OTA::NO_UPDATE) {
+    Serial.println("New firmware available! Starting update process...");
     Serial.println("Asset ID: " + String(updateInfo.firmware_asset_id));
     
     // Perform the update with the update object
-    OTA::InstallCondition result = OTA::performUpdate(&updateInfo);
+    updateInfo = OTA::performUpdate(&updateInfo);
     
-    if (result == OTA::INSTALL_OK) {
-      Serial.println("✅ Update successful! Device will restart automatically.");
+    if (updateInfo.condition == OTA::UPDATE_OK) {
+      Serial.println("Update successful! Device will restart automatically.");
       // Device will restart automatically
     } else {
-      Serial.println("⚠️ Update failed with error code: " + String(result));
+      Serial.println("Update failed with condition: " + String(updateInfo.condition));
       
       // Try redirect method
       Serial.println("Trying redirect method...");
-      OTA::InstallCondition redirectResult = OTA::continueRedirect(&updateInfo);
+      updateInfo = OTA::continueRedirect(&updateInfo);
       
-      if (redirectResult == OTA::INSTALL_OK) {
-        Serial.println("✅ Redirect update successful! Device will restart automatically.");
+      if (updateInfo.condition == OTA::UPDATE_OK) {
+        Serial.println("Redirect update successful! Device will restart automatically.");
       } else {
-        Serial.println("❌ Both update methods failed!");
-        Serial.println("Error code: " + String(redirectResult));
+        Serial.println("Both update methods failed!");
+        Serial.println("Final condition: " + String(updateInfo.condition));
       }
     }
   } else {
-    Serial.println("✅ Firmware is up to date (running " + String(FIRMWARE_VERSION) + ")");
+    Serial.println("Firmware is up to date (running " + String(FIRMWARE_VERSION) + ")");
   }
 }
