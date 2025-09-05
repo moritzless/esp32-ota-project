@@ -128,7 +128,8 @@ void checkForUpdates() {
     // Perform the update - this returns InstallCondition, not UpdateObject
     OTA::InstallCondition result = OTA::performUpdate(&updateInfo);
     
-    if (result == OTA::INSTALL_SUCCESSFUL) {
+    // Try different possible enum values
+    if (result == OTA::INSTALL_OK || result == OTA::UPDATE_SUCCESSFUL || result == 0) {
       Serial.println("Update successful! Device will restart automatically.");
       // Device will restart automatically
     } else {
@@ -138,7 +139,7 @@ void checkForUpdates() {
       Serial.println("Trying redirect method...");
       OTA::InstallCondition redirectResult = OTA::continueRedirect(&updateInfo);
       
-      if (redirectResult == OTA::INSTALL_SUCCESSFUL) {
+      if (redirectResult == OTA::INSTALL_OK || redirectResult == OTA::UPDATE_SUCCESSFUL || redirectResult == 0) {
         Serial.println("Redirect update successful! Device will restart automatically.");
       } else {
         Serial.println("Both update methods failed!");
