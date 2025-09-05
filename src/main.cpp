@@ -20,7 +20,7 @@ const char* ssid = "Moritz WLAN";
 const char* password = "Schnorrer123";     
 
 // Firmware version
-const char* FIRMWARE_VERSION = "v1.0.10";
+const char* FIRMWARE_VERSION = "v1.0.11";
 
 // Update check interval (5 minutes)
 const unsigned long updateCheckInterval = 5 * 60 * 1000;
@@ -128,38 +128,10 @@ void blinkLED() {
 
 void updateRgbLED() {
   // Change RGB LED color every 3 seconds
-  if (millis() - lastRgbUpdate >= 3000) {
-    switch(rgbMode) {
-      case 0: // Blue
-        rgbLED.setPixelColor(0, rgbLED.Color(0, 0, 255));
-        Serial.println("RGB LED: Blue");
-        break;
-      case 1: // Green
-        rgbLED.setPixelColor(0, rgbLED.Color(0, 255, 0));
-        Serial.println("RGB LED: Green");
-        break;
-      case 2: // Red
-        rgbLED.setPixelColor(0, rgbLED.Color(255, 0, 0));
-        Serial.println("RGB LED: Red");
-        break;
-      case 3: // Purple
-        rgbLED.setPixelColor(0, rgbLED.Color(128, 0, 128));
-        Serial.println("RGB LED: Purple");
-        break;
-      case 4: // Cyan
-        rgbLED.setPixelColor(0, rgbLED.Color(0, 255, 255));
-        Serial.println("RGB LED: Cyan");
-        break;
-      case 5: // Yellow
-        rgbLED.setPixelColor(0, rgbLED.Color(255, 255, 0));
-        Serial.println("RGB LED: Yellow");
-        break;
-    }
-    
+
+    rgbLED.setPixelColor(0, rgbLED.Color(0, 0, 255));
+    Serial.println("RGB LED: Blue");
     rgbLED.show();
-    rgbMode = (rgbMode + 1) % 6; // Cycle through 6 colors
-    lastRgbUpdate = millis();
-  }
 }
 
 void connectToWiFi() {
