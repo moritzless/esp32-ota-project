@@ -125,25 +125,28 @@ void checkForUpdates() {
     Serial.println("New firmware available! Starting update process...");
     Serial.println("Asset ID: " + String(updateInfo.firmware_asset_id));
     
-    // Perform the update - this returns InstallCondition, not UpdateObject
+    // Perform the update - this returns InstallCondition
     OTA::InstallCondition result = OTA::performUpdate(&updateInfo);
     
-    // Try different possible enum values
-    if (result == OTA::INSTALL_OK || result == OTA::UPDATE_SUCCESSFUL || result == 0) {
+    Serial.println("Update result: " + String(result));
+    
+    // For now, just print the result and try redirect if it's not 0
+    if (result == 0) {
       Serial.println("Update successful! Device will restart automatically.");
       // Device will restart automatically
     } else {
-      Serial.println("Update failed with condition: " + String(result));
+      Serial.println("Update failed or needs redirect. Trying redirect method...");
       
       // Try redirect method
-      Serial.println("Trying redirect method...");
       OTA::InstallCondition redirectResult = OTA::continueRedirect(&updateInfo);
       
-      if (redirectResult == OTA::INSTALL_OK || redirectResult == OTA::UPDATE_SUCCESSFUL || redirectResult == 0) {
+      Serial.println("Redirect result: " + String(redirectResult));
+      
+      if (redirectResult == 0) {
         Serial.println("Redirect update successful! Device will restart automatically.");
       } else {
-        Serial.println("Both update methods failed!");
-        Serial.println("Final condition: " + String(redirectResult));
+        Serial.println("Both update methods completed with non-zero result.");
+        Serial.println("Check serial output for actual success - device may restart anyway.");
       }
     }
   } else {
